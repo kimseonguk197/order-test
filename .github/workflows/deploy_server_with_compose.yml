@@ -36,4 +36,4 @@ jobs:
           fi
           sudo docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
 
-          sudo docker-compose pull && docker-compose up -d
+          sudo docker-compose pull && sudo docker-compose up -d
