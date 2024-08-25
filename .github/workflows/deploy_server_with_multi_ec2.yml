@@ -1,0 +1,91 @@
+# 워크플로우의 이름을 지정
+name: Deploy to Ec2 With Jar
+
+# push 이벤트 지정
+# main브랜치에 push 될때마다 워크플로우가 실행되도록 지정 
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+# 작업의 이름 지정
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+
+    - name: Build with Gradle
+      working-directory: .
+      run: |
+        chmod 777 ./gradlew
+        ./gradlew bootJar
+    
+    - name: Copy jar to ec2
+      uses: appleboy/scp-action@master
+      with:
+        host: ec2-15-164-102-219.ap-northeast-2.compute.amazonaws.com
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "./build/libs/*.jar"
+        target: "/home/ubuntu"
+        # 위와 같은 target으로 복사하게 되면 폴더째로 /home/ubuntu/build/libs/*.jar형태로 복사가 됨
+    
+    - name: install java and run jar on ec2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ec2-15-164-102-219.ap-northeast-2.compute.amazonaws.com
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          if ! type java > /dev/null; then
+            sudo apt update && sudo apt install openjdk-11-jdk -y
+          else
+            echo "java is already installed"
+          fi
+          sudo killall java
+          nohup java -jar /home/ubuntu/build/libs/*.jar \
+          --spring.redis.host=test4.uoizyu.ng.0001.apn2.cache.amazonaws.com \
+          --spring.datasource.url=jdbc:mariadb://${{ secrets.DB_HOST }}:3306/ordersystem \
+          --spring.datasource.username=admin \
+          --spring.datasource.password=${{ secrets.DB_PASSWORD }} \
+          --cloud.aws.credentials.access-key=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          --cloud.aws.credentials.secret-key=${{ secrets.AWS_SECRET_ACCESS_KEY }} > /home/ubuntu/app.log 2>&1 &
+          
+    - name: Copy jar to ec2
+      uses: appleboy/scp-action@master
+      with:
+        host: ec2-3-35-24-162.ap-northeast-2.compute.amazonaws.com
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "./build/libs/*.jar"
+        target: "/home/ubuntu"
+        # 위와 같은 target으로 복사하게 되면 폴더째로 /home/ubuntu/build/libs/*.jar형태로 복사가 됨
+    
+    - name: install java and run jar on ec2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ec2-3-35-24-162.ap-northeast-2.compute.amazonaws.com
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          if ! type java > /dev/null; then
+            sudo apt update && sudo apt install openjdk-11-jdk -y
+          else
+            echo "java is already installed"
+          fi
+          sudo killall java
+          nohup java -jar /home/ubuntu/build/libs/*.jar \
+          --spring.redis.host=test4.uoizyu.ng.0001.apn2.cache.amazonaws.com \
+          --spring.datasource.url=jdbc:mariadb://${{ secrets.DB_HOST }}:3306/ordersystem \
+          --spring.datasource.username=admin \
+          --spring.datasource.password=${{ secrets.DB_PASSWORD }} \
+          --cloud.aws.credentials.access-key=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          --cloud.aws.credentials.secret-key=${{ secrets.AWS_SECRET_ACCESS_KEY }} > /home/ubuntu/app.log 2>&1 &
+          

@@ -1,0 +1,44 @@
+name: Deploy to Ec2 With Docker
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Build Docker Image
+      working-directory: .
+      run: docker build -t kimseonguk/ordersystem-backend:latest .
+    
+    - name: DockerHub Login
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Push Docker Image to DockerHub
+      run: docker push kimseonguk/ordersystem-backend:latest
+
+    - name: ec2 ssh login and docker run
+      uses: appleboy/ssh-action@master
+      with:
+        host: ec2-3-35-136-226.ap-northeast-2.compute.amazonaws.com
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+      # type docker : docker명령어가 현재 시스템에 존재하는지를 확인
+      # > /dev/null : 명령어의 출력을 무시할때 사용
+        script: |
+          if ! type docker > /dev/null ; then
+            sudo snap install docker || echo "Docker 설치에 실패했습니다."
+          fi
+          sudo docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+
+          sudo docker pull kimseonguk/ordersystem-backend:latest
+
+          sudo docker-compose down || echo "Docker Compose down 명령어 실패 또는 실행 중인 컨테이너 없음"
+
+          # 컨테이너 다시 시작
+          sudo docker-compose up -d
