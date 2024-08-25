@@ -36,9 +36,4 @@ jobs:
           fi
           sudo docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
 
-          sudo docker pull kimseonguk/ordersystem-backend:latest
-
-          sudo docker-compose down || echo "Docker Compose down 명령어 실패 또는 실행 중인 컨테이너 없음"
-
-          # 컨테이너 다시 시작
-          sudo docker-compose up -d
+          sudo docker-compose pull && docker-compose up -d
