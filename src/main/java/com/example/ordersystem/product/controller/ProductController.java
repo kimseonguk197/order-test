@@ -42,7 +42,7 @@ public class ProductController {
 
     @GetMapping("/product/list")
     public String productList(ProductSearchDto searchDto, Pageable pageable){
-        return "hello world";
+        return "hello world2";
     }
 
 
