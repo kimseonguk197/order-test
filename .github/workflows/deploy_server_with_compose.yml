@@ -25,7 +25,7 @@ jobs:
     - name: ec2 ssh login and docker run
       uses: appleboy/ssh-action@master
       with:
-        host: ec2-3-35-136-226.ap-northeast-2.compute.amazonaws.com
+        host: ec2-43-201-29-144.ap-northeast-2.compute.amazonaws.com
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
       # type docker : docker명령어가 현재 시스템에 존재하는지를 확인
